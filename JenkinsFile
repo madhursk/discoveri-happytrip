@@ -11,6 +11,12 @@ pipeline{
             }
             
         }
+         stage('Archive'){
+            steps{
+                echo "Archive Project"
+                archiveArtifacts artifacts: 'target/prabhav-1.war', followSymlinks: false
+            }
+        }
         
     }
 }
