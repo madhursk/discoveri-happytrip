@@ -1,29 +1,42 @@
 pipeline{
     agent any
+     parameters {
+        booleanParam(name: 'Deploy', defaultValue: false)
+        booleanParam(name: 'Check_code', defaultValue: false)
+    }
     stages{
         stage('Build'){
            tools{
            jdk 'jdk8'
            }
+           when{
+                expression { params.Check_code == true }
+            }
             steps{
                 echo "checkout proj"
-                powershell label: '', script: 'mvn clean package -f pom.xml sonar:sonar'
+                  withSonarQubeEnv('Sonar') {
+
+ 
+           powershell label: '', script: 'mvn package -f pom.xml sonar:sonar'
+        }
+                
             }
             
         }
-        withSonarQubeEnv('Sonar') {
-
- 
-            powershell label: '', script: 'mvn package -f happytrip-code\\pom.xml sonar:sonar'
-
- 
-}
-         stage('Archive'){
-            steps{
-                echo "Archive Project"
-                archiveArtifacts artifacts: 'target/prabhav-1.war', followSymlinks: false
+      
+         stage('Deploy'){
+            when{
+                    expression { params.Deploy == true }
+            }
+            steps {
+                    deploy adapters: [tomcat7(credentialsId: 'tomcat7', path: '', url: 'http://localhost:8081/')], contextPath: 'happytrip-pipeline', onFailure: false, war: 'target/prabhav-1.war'
             }
         }
-        
+    }
+    post {
+        always {
+                archiveArtifacts artifacts: 'target/prabhav-1.war', followSymlinks: false
+                                
+        }
     }
 }
